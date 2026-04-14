@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0A0A0A;
+  color: #F5F5F5;
+  font-family: system-ui, -apple-system, sans-serif;
+  min-width: 375px;
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100dvh;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #141414; }
+::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 2px; }
