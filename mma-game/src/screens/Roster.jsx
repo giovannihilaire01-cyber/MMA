@@ -149,7 +149,11 @@ function RecruitModal({ recruits, onSelect, onClose, budget }) {
   )
 }
 
-export default function Roster({ fighters, currentEvent, budget, onRecruit, onGoMatchmaking }) {
+export default function Roster({ fighters, currentEvent, budget, activeEffects = [], onRecruit, onGoMatchmaking }) {
+  const effectsByFighter = activeEffects.reduce((acc, e) => {
+    if (e.fighterId) (acc[e.fighterId] = acc[e.fighterId] || []).push(e)
+    return acc
+  }, {})
   const [sortBy, setSortBy] = useState('frappe')
   const [selectedFighter, setSelectedFighter] = useState(null)
   const [showRecruit, setShowRecruit] = useState(false)
@@ -219,6 +223,7 @@ export default function Roster({ fighters, currentEvent, budget, onRecruit, onGo
               key={f.id}
               fighter={f}
               inEvent={selectedIds.has(f.id)}
+              effects={effectsByFighter[f.id] || []}
               onClick={() => setSelectedFighter(f)}
             />
           ))}

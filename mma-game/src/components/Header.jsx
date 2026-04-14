@@ -1,9 +1,11 @@
-export default function Header({ nom, budget }) {
+export default function Header({ nom, budget, flash }) {
   const isCritical = budget < 20000
 
   function fmt(n) {
     return '$' + Math.abs(n).toLocaleString('en-US')
   }
+
+  const flashClass = flash === 'green' ? 'flash-green' : flash === 'red' ? 'flash-red' : ''
 
   return (
     <header
@@ -14,7 +16,8 @@ export default function Header({ nom, budget }) {
         {nom}
       </span>
       <span
-        className="font-mono font-bold text-sm"
+        key={flash || 'idle'}
+        className={`font-mono font-bold text-sm ${flashClass}`}
         style={{ color: isCritical ? '#FF3B30' : '#E8FF00' }}
       >
         {budget < 0 ? '-' : ''}{fmt(budget)}

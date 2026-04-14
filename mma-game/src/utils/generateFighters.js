@@ -32,7 +32,7 @@ function randStat() {
   return Math.floor(Math.random() * 51) + 40 // 40–90
 }
 
-function generateFighter() {
+export function generateFighter() {
   return {
     id: crypto.randomUUID(),
     nom: uniqueName(),

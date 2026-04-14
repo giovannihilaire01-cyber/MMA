@@ -1,3 +1,5 @@
+import ContextualEventCard from '../components/ContextualEventCard'
+
 function FightResultCard({ result, fighters, index, total }) {
   const winner = fighters.find(f => f.id === result.winnerId)
   const loser = fighters.find(f => f.id === result.loserId)
@@ -137,7 +139,12 @@ function FinancialSummary({ financials }) {
   )
 }
 
-export default function Results({ results, financials, fighters, onNewEvent }) {
+export default function Results({
+  results, financials, fighters, onNewEvent,
+  contextualEvent, onAcknowledgeEvent,
+}) {
+  const hasContextualEvent = !!contextualEvent
+
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 112px)' }}>
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 flex flex-col gap-3">
@@ -156,6 +163,15 @@ export default function Results({ results, financials, fighters, onNewEvent }) {
         ))}
 
         <FinancialSummary financials={financials} />
+
+        {hasContextualEvent && (
+          <ContextualEventCard
+            event={contextualEvent.event}
+            interpolatedDescription={contextualEvent.interpolated}
+            value={contextualEvent.value}
+            onOk={onAcknowledgeEvent}
+          />
+        )}
       </div>
 
       <div className="px-4 py-3" style={{ borderTop: '1px solid #2A2A2A', background: '#0A0A0A' }}>
@@ -165,6 +181,13 @@ export default function Results({ results, financials, fighters, onNewEvent }) {
             style={{ background: 'rgba(255,59,48,0.15)', color: '#FF3B30', border: '1px solid #FF3B30' }}
           >
             FAILLITE — FIN DE PARTIE
+          </div>
+        ) : hasContextualEvent ? (
+          <div
+            className="w-full py-4 rounded-lg font-bold uppercase tracking-wider text-sm text-center"
+            style={{ background: '#1A1A1A', color: '#555', border: '1px dashed #2A2A2A' }}
+          >
+            Traitez l'événement pour continuer
           </div>
         ) : (
           <button

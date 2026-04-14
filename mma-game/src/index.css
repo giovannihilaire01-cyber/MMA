@@ -25,3 +25,14 @@ html, body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: #141414; }
 ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 2px; }
+
+@keyframes budgetFlashGreen {
+  0%, 100% { color: #E8FF00; }
+  50%      { color: #34C759; }
+}
+@keyframes budgetFlashRed {
+  0%, 100% { color: #E8FF00; }
+  50%      { color: #FF3B30; }
+}
+.flash-green { animation: budgetFlashGreen 300ms ease-out 1; }
+.flash-red   { animation: budgetFlashRed   300ms ease-out 1; }

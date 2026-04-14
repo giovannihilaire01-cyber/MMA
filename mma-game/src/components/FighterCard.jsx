@@ -1,3 +1,14 @@
+import EffectIcon from './EffectIcon'
+
+function EffectRow({ effects }) {
+  if (!effects || effects.length === 0) return null
+  return (
+    <div className="flex gap-1 flex-wrap">
+      {effects.map(e => <EffectIcon key={e.id} effect={e} />)}
+    </div>
+  )
+}
+
 function StatBar({ label, value, color }) {
   return (
     <div className="flex items-center gap-2">
@@ -17,8 +28,10 @@ function StatBar({ label, value, color }) {
   )
 }
 
-export default function FighterCard({ fighter, inEvent = false, compact = false, onClick }) {
+export default function FighterCard({ fighter, inEvent = false, compact = false, onClick, effects = [] }) {
   const { nom, frappe, lutte, sol, bilan } = fighter
+  const suspended = effects.some(e => e.type === 'suspension')
+  const disabledStyle = suspended ? { opacity: 0.4, borderColor: '#444' } : {}
 
   if (compact) {
     return (
@@ -29,6 +42,7 @@ export default function FighterCard({ fighter, inEvent = false, compact = false,
           background: '#141414',
           border: `1px solid ${inEvent ? '#E8FF00' : '#2A2A2A'}`,
           minWidth: 110,
+          ...disabledStyle,
         }}
       >
         <span className="font-bold uppercase tracking-wide text-primary leading-tight" style={{ fontSize: 11 }}>
@@ -41,6 +55,7 @@ export default function FighterCard({ fighter, inEvent = false, compact = false,
           <span className="text-secondary">/</span>
           <span style={{ color: '#FB923C' }}>{sol}</span>
         </div>
+        <EffectRow effects={effects} />
         <span className="text-secondary" style={{ fontSize: 10 }}>
           {bilan.v}V · {bilan.d}D
         </span>
@@ -55,6 +70,7 @@ export default function FighterCard({ fighter, inEvent = false, compact = false,
       style={{
         background: '#141414',
         border: `1px solid ${inEvent ? '#E8FF00' : '#2A2A2A'}`,
+        ...disabledStyle,
       }}
     >
       <div className="flex items-start justify-between gap-1">
@@ -70,6 +86,7 @@ export default function FighterCard({ fighter, inEvent = false, compact = false,
           </span>
         )}
       </div>
+      <EffectRow effects={effects} />
       <div className="flex flex-col gap-1.5">
         <StatBar label="Frappe" value={frappe} color="#E8FF00" />
         <StatBar label="Lutte" value={lutte} color="#60A5FA" />

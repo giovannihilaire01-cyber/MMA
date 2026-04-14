@@ -2,6 +2,7 @@ const TABS = [
   { id: 'roster', label: 'Roster', icon: '👥' },
   { id: 'matchmaking', label: 'Événement', icon: '🥊' },
   { id: 'results', label: 'Résultats', icon: '📋' },
+  { id: 'history', label: 'Historique', icon: '📜' },
 ]
 
 export default function BottomNav({ active, hasResults, onChange }) {

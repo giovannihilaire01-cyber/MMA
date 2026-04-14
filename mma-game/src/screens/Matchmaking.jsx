@@ -4,27 +4,29 @@ import { useDrag, useDrop } from 'react-dnd'
 const DND_TYPE = 'FIGHTER'
 
 // Draggable fighter card in the pool
-function PoolCard({ fighter }) {
+function PoolCard({ fighter, suspended = false }) {
   const [{ isDragging }, drag] = useDrag({
     type: DND_TYPE,
     item: { id: fighter.id },
+    canDrag: () => !suspended,
     collect: monitor => ({ isDragging: monitor.isDragging() }),
   })
 
   return (
     <div
       ref={drag}
-      className="rounded-lg p-2.5 flex flex-col gap-1 shrink-0 cursor-grab active:cursor-grabbing select-none"
+      className="rounded-lg p-2.5 flex flex-col gap-1 shrink-0 select-none"
       style={{
         background: '#141414',
-        border: '1px solid #2A2A2A',
+        border: `1px solid ${suspended ? '#444' : '#2A2A2A'}`,
         minWidth: 100,
-        opacity: isDragging ? 0.3 : 1,
+        opacity: suspended ? 0.4 : (isDragging ? 0.3 : 1),
         transition: 'opacity 0.15s',
+        cursor: suspended ? 'not-allowed' : 'grab',
       }}
     >
       <span className="font-bold uppercase tracking-wide text-primary leading-tight" style={{ fontSize: 10 }}>
-        {fighter.nom}
+        {suspended ? '🚫 ' : ''}{fighter.nom}
       </span>
       <div className="flex gap-1 font-mono" style={{ fontSize: 9 }}>
         <span style={{ color: '#E8FF00' }}>{fighter.frappe}</span>
@@ -144,14 +146,18 @@ function MatchupRow({ index, matchup, fighters, onDrop, onRemove, onDelete, isMa
   )
 }
 
-export default function Matchmaking({ fighters, currentEvent, onUpdateEvent, onSimulate }) {
+export default function Matchmaking({ fighters, currentEvent, activeEffects = [], onUpdateEvent, onSimulate }) {
   // Ensure at least 1 slot
   const event = currentEvent.length > 0
     ? currentEvent
     : [{ fighter1Id: null, fighter2Id: null }]
 
+  const suspendedIds = new Set(
+    activeEffects.filter(e => e.type === 'suspension' && e.fighterId).map(e => e.fighterId)
+  )
   const usedIds = new Set(event.flatMap(m => [m.fighter1Id, m.fighter2Id].filter(Boolean)))
-  const pool = fighters.filter(f => !usedIds.has(f.id))
+  const availablePool = fighters.filter(f => !usedIds.has(f.id) && !suspendedIds.has(f.id))
+  const suspendedPool = fighters.filter(f => suspendedIds.has(f.id))
 
   const [simulating, setSimulating] = useState(false)
 
@@ -235,7 +241,12 @@ export default function Matchmaking({ fighters, currentEvent, onUpdateEvent, onS
             className="uppercase tracking-wider font-bold text-secondary"
             style={{ fontSize: 10 }}
           >
-            Combattants disponibles ({pool.length})
+            Combattants disponibles ({availablePool.length})
+            {suspendedPool.length > 0 && (
+              <span style={{ color: '#FF3B30', marginLeft: 8 }}>
+                · {suspendedPool.length} indisponible{suspendedPool.length > 1 ? 's' : ''}
+              </span>
+            )}
           </span>
         </div>
       </div>
@@ -245,10 +256,13 @@ export default function Matchmaking({ fighters, currentEvent, onUpdateEvent, onS
         className="px-4 py-3 flex gap-2 overflow-x-auto"
         style={{ borderTop: '1px solid #2A2A2A' }}
       >
-        {pool.length === 0 ? (
+        {availablePool.length === 0 && suspendedPool.length === 0 ? (
           <span className="text-secondary text-xs italic">Tous les combattants sont placés.</span>
         ) : (
-          pool.map(f => <PoolCard key={f.id} fighter={f} />)
+          <>
+            {availablePool.map(f => <PoolCard key={f.id} fighter={f} />)}
+            {suspendedPool.map(f => <PoolCard key={f.id} fighter={f} suspended />)}
+          </>
         )}
       </div>
 
