@@ -1,0 +1,483 @@
+# MMA Promotion Manager — Game Design Document
+
+### Version 1.0 · MVP
+
+-----
+
+## Table des matières
+
+1. Vision & Concept
+1. Boucle de jeu
+1. Données & Modèle
+1. Mécanique de simulation
+1. Économie
+1. Recrutement
+1. Sauvegarde
+1. UI/UX — Design System
+1. UI/UX — Écrans
+1. Stack technique
+1. Critères de succès MVP
+1. Hors périmètre MVP
+
+-----
+
+## 1. Vision & Concept
+
+**MMA Promotion Manager** est un jeu de simulation de gestion web, inspiré de l'univers UFC, dans lequel le joueur dirige une organisation de combat fictive.
+
+Le joueur :
+
+- Compose des cartes d'événements (matchmaking)
+- Simule des combats (résolution automatique par stats)
+- Gère son budget
+- Recrute de nouveaux combattants
+
+La partie est **unique et sans fin**. Il n'y a pas de saison, pas d'arc narratif — juste une boucle de gestion continue jusqu'au game over (budget à zéro).
+
+**Plateforme cible :** Web navigateur, mobile-first
+**Univers :** Fictif, inspiré de la réalité (UFC-like), sans licences
+**Catégorie de poids :** Une seule (pas de divisions pour le MVP)
+
+-----
+
+## 2. Boucle de jeu
+
+```
+[ONBOARDING]
+Saisir nom de la promotion → Générer 16 combattants
+         ↓
+[ROSTER]
+Consulter les combattants disponibles / Recruter
+         ↓
+[MATCHMAKING]
+Composer la carte (1 à 5 combats) par drag & drop
+         ↓
+[SIMULATION]
+Résolution automatique de chaque combat (stats vs stats)
+         ↓
+[RÉSULTATS]
+Affichage des vainqueurs, méthodes, bilan financier
+         ↓
+Retour au ROSTER — boucle infinie jusqu'à budget = $0
+```
+
+-----
+
+## 3. Données & Modèle
+
+### 3.1 Promotion
+
+|Champ |Type  |Valeur initiale   |
+|------|------|------------------|
+|nom   |string|Saisi au démarrage|
+|budget|number|$100,000          |
+
+### 3.2 Combattant
+
+|Champ |Type        |Détail                         |
+|------|------------|-------------------------------|
+|id    |uuid        |Généré automatiquement         |
+|nom   |string      |Nom unique généré aléatoirement|
+|frappe|number 0–100|Striking (boxe, kickboxing)    |
+|lutte |number 0–100|Wrestling, grappling           |
+|sol   |number 0–100|BJJ, soumissions               |
+|bilan |{ V, D }    |Victoires / Défaites           |
+
+**Roster initial :** 16 combattants générés procéduralement au lancement.
+**Catégorie de poids :** unique pour tous les combattants dans le MVP.
+
+### 3.3 Événement
+
+|Champ |Type              |Détail                     |
+|------|------------------|---------------------------|
+|id    |uuid              |Généré automatiquement     |
+|carte |array de matchups |1 à 5 paires de combattants|
+|statut|planifié / terminé|                           |
+
+### 3.4 Résultat de combat
+
+|Champ    |Type|Valeurs possibles         |
+|---------|----|--------------------------|
+|vainqueur|uuid|ID du combattant gagnant  |
+|perdant  |uuid|ID du combattant perdant  |
+|méthode  |enum|KO · Soumission · Décision|
+
+-----
+
+## 4. Mécanique de simulation de combat
+
+### 4.1 Formule de score
+
+Pour chaque combattant, un score offensif est calculé :
+
+```
+score = (frappe × 0.4) + (lutte × 0.3) + (sol × 0.3) + random(0, 15)
+```
+
+Le combattant avec le score le plus élevé remporte le combat.
+
+### 4.2 Détermination de la méthode
+
+La méthode de victoire est déterminée par le profil dominant du vainqueur :
+
+|Condition                     |Méthode   |
+|------------------------------|----------|
+|frappe > lutte ET frappe > sol|KO        |
+|sol > frappe ET sol > lutte   |Soumission|
+|Sinon                         |Décision  |
+
+### 4.3 Progression des stats post-combat
+
+Les stats évoluent automatiquement après chaque combat :
+
+|Résultat|Effet                                                 |
+|--------|------------------------------------------------------|
+|Victoire|+2 à +4 points sur la stat la plus élevée du vainqueur|
+|Défaite |-1 point sur la stat la plus faible du perdant        |
+
+Les stats sont plafonnées entre **0 et 99**.
+
+-----
+
+## 5. Économie
+
+### 5.1 Flux financiers
+
+|Flux                    |Montant|
+|------------------------|-------|
+|Revenu par combat simulé|+$8,000|
+|Coût par combat         |-$3,000|
+|Coût fixe d'organisation|-$5,000|
+
+### 5.2 Exemple de calcul
+
+Événement avec **3 combats** :
+
+```
+Revenus   3 × $8,000  =  +$24,000
+Coûts     3 × $3,000  =   -$9,000
+Fixe                  =   -$5,000
+─────────────────────────────────
+Net                   =  +$10,000
+```
+
+### 5.3 Game Over
+
+Si le budget atteint **$0 ou moins** → écran de fin immédiat.
+
+L'écran de game over affiche :
+
+- Nombre d'événements organisés
+- Nombre total de combats simulés
+- Bouton **NOUVELLE PARTIE** (efface la save)
+
+-----
+
+## 6. Recrutement
+
+Le joueur peut recruter manuellement entre deux événements depuis l'écran Roster.
+
+|Paramètre    |Valeur                                |
+|-------------|--------------------------------------|
+|Déclencheur  |Bouton `+ RECRUTER` sur l'écran Roster|
+|Présentation |3 combattants aléatoires à choisir    |
+|Sélection    |Le joueur en choisit 1                |
+|Coût         |-$15,000 par recrutement              |
+|Disponibilité|Uniquement entre deux événements      |
+
+-----
+
+## 7. Sauvegarde
+
+**Mécanisme :** localStorage (navigateur), côté client uniquement.
+**Déclencheur :** Auto-save après chaque événement simulé et après chaque recrutement.
+**Structure JSON :**
+
+```json
+{
+  "promotion": {
+    "nom": "APEX FC",
+    "budget": 98500
+  },
+  "roster": [ /* array de combattants */ ],
+  "evenementEnCours": [ /* matchups en préparation */ ],
+  "historique": [ /* événements terminés */ ]
+}
+```
+
+**Nouvelle partie :** Bouton accessible depuis l'onboarding ou le game over. Efface intégralement la save après confirmation.
+
+-----
+
+## 8. UI/UX — Design System
+
+### 8.1 Palette de couleurs
+
+|Rôle                       |Valeur                      |
+|---------------------------|----------------------------|
+|Background                 |`#0A0A0A`                   |
+|Surface (cartes)           |`#141414`                   |
+|Bordures                   |`#2A2A2A`                   |
+|Texte principal            |`#F5F5F5`                   |
+|Texte secondaire           |`#888888`                   |
+|Accent (CTA, chiffres clés)|`#E8FF00`                   |
+|Victoire / Succès          |`#34C759`                   |
+|Défaite / Danger           |`#FF3B30`                   |
+|Budget critique            |`#FF3B30` (budget < $20,000)|
+
+### 8.2 Typographie
+
+|Usage |Style                               |
+|------|------------------------------------|
+|Titres|`font-bold uppercase tracking-wider`|
+|Stats |`font-mono` (chiffres alignés)      |
+|Corps |`font-normal text-sm`               |
+
+**Border radius :** `rounded-lg` (8px) — sobre, pas cartoon.
+
+### 8.3 Layout global
+
+```
+┌─────────────────────────────────┐
+│  APEX FC            $98,500     │  ← Header fixe (nom + budget)
+├─────────────────────────────────┤
+│                                 │
+│         CONTENU                 │  ← Zone scrollable
+│         DE L'ÉCRAN              │
+│                                 │
+├─────────────────────────────────┤
+│  👥 Roster  🥊 Événement  📋 Résultats │  ← Bottom nav (3 tabs)
+└─────────────────────────────────┘
+```
+
+### 8.4 Header fixe
+
+- **Gauche :** Nom de la promotion
+- **Droite :** Budget en accent jaune `#E8FF00`
+- **Budget critique :** Passe en rouge `#FF3B30` si budget < $20,000
+
+### 8.5 Bottom navigation
+
+- 3 tabs : **Roster · Événement · Résultats**
+- Tab actif : icône + texte en jaune accent, fond légèrement surélevé
+- Toujours visible, pleine largeur
+
+### 8.6 Micro-interactions
+
+|Action                      |Feedback visuel                      |
+|----------------------------|-------------------------------------|
+|Drop combattant dans un slot|Flash jaune 200ms sur le slot        |
+|Tap bouton Simuler          |Pulse 300ms avant affichage résultats|
+|Budget négatif              |Header budget → rouge                |
+|Combattant déjà sélectionné |Badge coloré sur la card du Roster   |
+
+-----
+
+## 9. UI/UX — Écrans
+
+### 9.1 Écran 0 — Onboarding
+
+Affiché **une seule fois** au premier lancement.
+
+```
+[Fond noir, centré verticalement]
+
+  MMA PROMOTION MANAGER
+
+  Nom de ta promotion :
+  [ _________________________ ]
+
+        [ LANCER LA CARRIÈRE ]
+```
+
+- Génère les 16 combattants au clic
+- Disparaît définitivement après → stocké en localStorage
+
+-----
+
+### 9.2 Écran 1 — Roster
+
+**Hub principal du jeu.** Accessible via le tab Roster de la bottom nav.
+
+**Layout :** Grille 2 colonnes de cards, scrollable verticalement.
+
+**Card combattant :**
+
+```
+┌──────────────────────────┐
+│  ALEX MARTINEZ           │  ← Nom généré
+│                          │
+│  Frappe  ████████░░  78  │  ← Barre colorée + valeur
+│  Lutte   ██████░░░░  61  │
+│  Sol     █████████░  85  │
+│                          │
+│  12V · 3D                │  ← Bilan
+└──────────────────────────┘
+```
+
+**Interactions :**
+
+- **Tap** sur une card → modal de détail (stats complètes + historique combats)
+- **Tri** disponible : par Frappe / Lutte / Sol / Bilan
+- Combattant déjà sélectionné pour l'événement → badge jaune sur la card
+
+**Bouton bas de page :** `+ RECRUTER` (ouvre le flow de recrutement)
+
+-----
+
+### 9.3 Écran 2 — Matchmaking
+
+**Deux zones verticales :**
+
+**Zone haute — Carte de l'événement (slots)**
+
+```
+┌─────────────────────────────────┐
+│  MAIN EVENT                     │
+│  [ DROP ICI ········ ] VS [ ··· ]│
+├─────────────────────────────────┤
+│  FIGHT 2                        │
+│  [ MARTINEZ ] VS [ DROP ICI ]   │
+├─────────────────────────────────┤
+│  + AJOUTER UN COMBAT            │  ← Jusqu'à 5 slots max
+└─────────────────────────────────┘
+```
+
+**Zone basse — Pool de combattants disponibles**
+
+- Cards scrollables horizontalement
+- Un combattant déjà placé dans un slot disparaît du pool
+
+**Interaction drag & drop :**
+
+1. On drag une card depuis le pool
+1. On la dépose dans un slot vide
+1. Slot vide = pointillés + label "DROP ICI"
+1. Slot rempli = nom du combattant + stats condensées
+
+**CTA :** `SIMULER L'ÉVÉNEMENT` — bouton pleine largeur, accent jaune, actif uniquement si ≥ 1 matchup complet.
+
+-----
+
+### 9.4 Écran 3 — Résultats
+
+**Cards résultat** — une par combat, du Main Event au dernier :
+
+```
+┌──────────────────────────────────┐
+│  MARTINEZ          CHEN          │
+│  ██ VAINQUEUR  ░░░              │
+│                                  │
+│  Victoire par KO                 │
+└──────────────────────────────────┘
+```
+
+- **Vainqueur :** texte blanc, badge `VICTOIRE` vert
+- **Perdant :** texte grisé, badge `DÉFAITE` rouge
+- Méthode en texte secondaire
+
+**Bilan financier en bas :**
+
+```
+Revenus événement       + $24,000
+Coût des combats        -  $9,000
+Coût d'organisation     -  $5,000
+─────────────────────────────────
+Net                     + $10,000
+Nouveau budget            $110,000
+```
+
+**CTA :** `NOUVEL ÉVÉNEMENT` → retour à l'écran Matchmaking (réinitialise les slots)
+
+-----
+
+### 9.5 Écran Game Over
+
+Affiché si le budget atteint $0.
+
+```
+[Fond noir, centré]
+
+  FAILLITE
+
+  Ta promotion n'a pas survécu.
+
+  Événements organisés  :  14
+  Combats simulés        :  52
+
+        [ NOUVELLE PARTIE ]
+```
+
+-----
+
+## 10. Stack technique
+
+|Couche     |Choix                          |
+|-----------|-------------------------------|
+|Framework  |React                          |
+|Style      |Tailwind CSS                   |
+|State      |useState / useReducer          |
+|Persistance|localStorage (client only)     |
+|Backend    |Aucun                          |
+|API externe|Aucune                         |
+|Génération |JS pur (noms, stats aléatoires)|
+
+**Fichiers principaux :**
+
+```
+src/
+├── components/
+│   ├── Header.jsx
+│   ├── BottomNav.jsx
+│   ├── FighterCard.jsx
+│   └── MatchupSlot.jsx
+├── screens/
+│   ├── Onboarding.jsx
+│   ├── Roster.jsx
+│   ├── Matchmaking.jsx
+│   ├── Results.jsx
+│   └── GameOver.jsx
+├── utils/
+│   ├── generateFighters.js
+│   ├── simulateFight.js
+│   └── storage.js
+└── App.jsx
+```
+
+-----
+
+## 11. Critères de succès MVP
+
+- [ ] L'onboarding génère 16 combattants fictifs en < 5 secondes
+- [ ] Le joueur peut composer une carte de 1 à 5 combats par drag & drop
+- [ ] La simulation résout correctement chaque combat (stats + random)
+- [ ] La méthode de victoire correspond au profil dominant du vainqueur
+- [ ] Les stats des combattants progressent après chaque combat
+- [ ] Le budget se met à jour correctement après chaque événement
+- [ ] Le recrutement est fonctionnel et débite le budget
+- [ ] Le game over se déclenche à $0
+- [ ] La sauvegarde persiste entre deux sessions navigateur
+- [ ] L'interface est utilisable sur mobile (375px min)
+
+-----
+
+## 12. Hors périmètre MVP
+
+Les fonctionnalités suivantes sont **explicitement exclues** du MVP et pourront être ajoutées dans des versions ultérieures :
+
+|Fonctionnalité            |Raison d'exclusion             |
+|--------------------------|-------------------------------|
+|Entraînement              |Remplacé par progression auto  |
+|Catégories de poids       |Complexité de matchmaking      |
+|Blessures & récupération  |Ajoute une couche de gestion   |
+|Réputation / médias       |Métrique non essentielle au MVP|
+|Gestion des contrats      |Hors scope                     |
+|IA adverse (autres promos)|Nécessite un système complet   |
+|Narration IA (Claude API) |Non requis pour la v1          |
+|Multijoueur               |Architecture différente        |
+|Historique détaillé       |Pas d'écran dédié              |
+
+-----
+
+*Document rédigé pour la version minimale de MMA Promotion Manager.*
+*Toutes les valeurs numériques (budgets, revenus, coûts) sont des paramètres ajustables.*
