@@ -28,29 +28,43 @@ function uniqueName() {
   return name
 }
 
-function randStat() {
-  return Math.floor(Math.random() * 51) + 40 // 40–90
+function randStat(tier = 'standard') {
+  // Different stat ranges based on recruitment tier
+  const ranges = {
+    cheap: { min: 30, max: 50 },      // 30-50 (rookies)
+    standard: { min: 40, max: 70 },   // 40-70 (current system)
+    star: { min: 60, max: 85 },       // 60-85 (champions)
+  }
+  const range = ranges[tier] || ranges.standard
+  return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min
 }
 
-export function generateFighter() {
+export function generateFighter(tier = 'standard') {
   return {
     id: crypto.randomUUID(),
     nom: uniqueName(),
-    frappe: randStat(),
-    lutte: randStat(),
-    sol: randStat(),
+    frappe: randStat(tier),
+    lutte: randStat(tier),
+    sol: randStat(tier),
     bilan: { v: 0, d: 0 },
   }
 }
 
-export function generateFighters(n = 16) {
+export function generateFighters(n = 16, tier = 'standard') {
   usedNames.clear()
-  return Array.from({ length: n }, generateFighter)
+  return Array.from({ length: n }, () => generateFighter(tier))
 }
 
-export function generateRecruits(existingNames = []) {
+export function generateRecruits(existingNames = [], tier = 'standard') {
   existingNames.forEach(n => usedNames.add(n))
-  const recruits = Array.from({ length: 3 }, generateFighter)
+  const recruits = Array.from({ length: 3 }, () => generateFighter(tier))
   existingNames.forEach(n => usedNames.delete(n))
   return recruits
 }
+
+// Recruitment tiers with costs
+export const RECRUITMENT_TIERS = [
+  { id: 'cheap', label: 'Cheap', cost: 10000, tier: 'cheap', description: 'Rookies (stats 30-50)' },
+  { id: 'standard', label: 'Standard', cost: 15000, tier: 'standard', description: 'Mid-level (stats 40-70)' },
+  { id: 'star', label: 'Star', cost: 25000, tier: 'star', description: 'Champions (stats 60-85)' },
+]

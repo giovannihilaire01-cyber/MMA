@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import FighterCard from '../components/FighterCard'
 import GoalTracker from '../components/GoalTracker'
-import { generateRecruits } from '../utils/generateFighters'
+import { generateRecruits, RECRUITMENT_TIERS } from '../utils/generateFighters'
 
 const SORT_OPTIONS = [
   { id: 'frappe', label: 'Frappe' },
@@ -78,7 +78,64 @@ function FighterModal({ fighter, onClose }) {
   )
 }
 
-function RecruitModal({ recruits, onSelect, onClose, budget }) {
+function RecruitTierModal({ onSelect, onClose, budget }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.85)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-xl p-5 flex flex-col gap-4"
+        style={{ background: '#141414', border: '1px solid #2A2A2A' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between">
+          <h2 className="font-bold uppercase tracking-wider text-primary text-base">Sélectionner un tier</h2>
+          <button onClick={onClose} className="text-secondary text-xl leading-none">×</button>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {RECRUITMENT_TIERS.map(tier => (
+            <button
+              key={tier.id}
+              onClick={() => budget >= tier.cost && onSelect(tier)}
+              disabled={budget < tier.cost}
+              className="rounded-lg p-3 flex flex-col gap-2 text-left transition-all"
+              style={{
+                background: budget >= tier.cost ? '#0A0A0A' : '#0A0A0A',
+                border: `1px solid ${budget >= tier.cost ? '#E8FF00' : '#555'}`,
+                opacity: budget >= tier.cost ? 1 : 0.5,
+                cursor: budget >= tier.cost ? 'pointer' : 'default',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold uppercase tracking-wide text-sm text-primary">{tier.label}</span>
+                <span className="font-mono font-bold" style={{ color: '#E8FF00' }}>
+                  ${tier.cost.toLocaleString()}
+                </span>
+              </div>
+              <span className="text-secondary text-xs">{tier.description}</span>
+              {budget < tier.cost && (
+                <span className="text-red-500 text-xs">Budget insuffisant</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-lg font-bold uppercase tracking-wider text-sm"
+          style={{ background: '#2A2A2A', color: '#F5F5F5' }}
+        >
+          ANNULER
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function RecruitModal({ recruits, onSelect, onClose, budget, selectedTier }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -92,18 +149,18 @@ function RecruitModal({ recruits, onSelect, onClose, budget }) {
       >
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-bold uppercase tracking-wider text-primary text-base">Recruter</h2>
-            <p className="text-secondary" style={{ fontSize: 11 }}>Choisir 1 combattant · Coût $15,000</p>
+            <h2 className="font-bold uppercase tracking-wider text-primary text-base">Recruter ({selectedTier?.label})</h2>
+            <p className="text-secondary" style={{ fontSize: 11 }}>Choisir 1 combattant · Coût ${selectedTier?.cost?.toLocaleString()}</p>
           </div>
           <button onClick={onClose} className="text-secondary text-xl leading-none">×</button>
         </div>
 
-        {budget < 15000 && (
+        {budget < (selectedTier?.cost || 15000) && (
           <div
             className="rounded-lg px-3 py-2 text-sm font-bold text-center"
             style={{ background: 'rgba(255,59,48,0.15)', color: '#FF3B30' }}
           >
-            Budget insuffisant ($15,000 requis)
+            Budget insuffisant (${(selectedTier?.cost || 15000).toLocaleString()} requis)
           </div>
         )}
 
@@ -117,13 +174,13 @@ function RecruitModal({ recruits, onSelect, onClose, budget }) {
               <div className="flex items-center justify-between">
                 <span className="font-bold uppercase tracking-wide text-sm text-primary">{r.nom}</span>
                 <button
-                  onClick={() => budget >= 15000 && onSelect(r)}
-                  disabled={budget < 15000}
+                  onClick={() => budget >= (selectedTier?.cost || 15000) && onSelect(r)}
+                  disabled={budget < (selectedTier?.cost || 15000)}
                   className="rounded px-3 py-1 font-bold uppercase tracking-wide text-xs transition-opacity"
                   style={{
-                    background: budget >= 15000 ? '#E8FF00' : '#2A2A2A',
-                    color: budget >= 15000 ? '#000' : '#555',
-                    cursor: budget >= 15000 ? 'pointer' : 'default',
+                    background: budget >= (selectedTier?.cost || 15000) ? '#E8FF00' : '#2A2A2A',
+                    color: budget >= (selectedTier?.cost || 15000) ? '#000' : '#555',
+                    cursor: budget >= (selectedTier?.cost || 15000) ? 'pointer' : 'default',
                   }}
                 >
                   RECRUTER
@@ -157,6 +214,8 @@ export default function Roster({ fighters, currentEvent, budget, activeEffects =
   }, {})
   const [sortBy, setSortBy] = useState('frappe')
   const [selectedFighter, setSelectedFighter] = useState(null)
+  const [showTierSelect, setShowTierSelect] = useState(false)
+  const [selectedTier, setSelectedTier] = useState(null)
   const [showRecruit, setShowRecruit] = useState(false)
   const [recruits, setRecruits] = useState([])
 
@@ -169,15 +228,22 @@ export default function Roster({ fighters, currentEvent, budget, activeEffects =
     return b[sortBy] - a[sortBy]
   })
 
-  function openRecruit() {
+  function openTierSelect() {
+    setShowTierSelect(true)
+  }
+
+  function handleTierSelect(tier) {
+    setSelectedTier(tier)
+    setShowTierSelect(false)
     const names = fighters.map(f => f.nom)
-    setRecruits(generateRecruits(names))
+    setRecruits(generateRecruits(names, tier.tier))
     setShowRecruit(true)
   }
 
   function handleSelect(recruit) {
-    onRecruit(recruit)
+    onRecruit({ ...recruit, recruitmentCost: selectedTier.cost })
     setShowRecruit(false)
+    setSelectedTier(null)
   }
 
   const eventCount = currentEvent.filter(m => m.fighter1Id && m.fighter2Id).length
@@ -245,7 +311,7 @@ export default function Roster({ fighters, currentEvent, budget, activeEffects =
       {/* Recruit button */}
       <div className="px-4 py-3" style={{ borderTop: '1px solid #2A2A2A', background: '#0A0A0A' }}>
         <button
-          onClick={openRecruit}
+          onClick={openTierSelect}
           className="w-full py-3.5 rounded-lg font-bold uppercase tracking-wider text-sm"
           style={{ background: '#141414', color: '#E8FF00', border: '1px solid #2A2A2A' }}
         >
@@ -256,10 +322,18 @@ export default function Roster({ fighters, currentEvent, budget, activeEffects =
       {selectedFighter && (
         <FighterModal fighter={selectedFighter} onClose={() => setSelectedFighter(null)} />
       )}
+      {showTierSelect && (
+        <RecruitTierModal
+          budget={budget}
+          onSelect={handleTierSelect}
+          onClose={() => setShowTierSelect(false)}
+        />
+      )}
       {showRecruit && (
         <RecruitModal
           recruits={recruits}
           budget={budget}
+          selectedTier={selectedTier}
           onSelect={handleSelect}
           onClose={() => setShowRecruit(false)}
         />

@@ -2,6 +2,8 @@ const TABS = [
   { id: 'roster', label: 'Roster', icon: '👥' },
   { id: 'matchmaking', label: 'Événement', icon: '🥊' },
   { id: 'results', label: 'Résultats', icon: '📋' },
+  { id: 'achievements', label: 'Achievements', icon: '🏆' },
+  { id: 'statistics', label: 'Stats', icon: '📊' },
   { id: 'history', label: 'Historique', icon: '📜' },
 ]
 

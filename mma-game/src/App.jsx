@@ -17,6 +17,8 @@ import Matchmaking from './screens/Matchmaking'
 import Results from './screens/Results'
 import GameOver from './screens/GameOver'
 import History from './screens/History'
+import AchievementsPanel from './screens/AchievementsPanel'
+import Statistics from './screens/Statistics'
 
 // Phase-based economic parameters
 function getEconomicParams(totalEvents) {
@@ -87,6 +89,10 @@ function initState() {
     activeEffects: [],
     pendingWarnings: [],
     currentContextualEvent: null,
+    // Achievements & Challenges
+    earnedAchievements: [],
+    consecutiveProfitableEvents: 0,
+    currentWinStreak: 0,
   }
 }
 
@@ -102,6 +108,9 @@ function migrateState(saved) {
     pendingWarnings: saved.pendingWarnings || [],
     currentContextualEvent: saved.currentContextualEvent || null,
     nbEvenementsJoues: saved.nbEvenementsJoues || 0,
+    earnedAchievements: saved.earnedAchievements || [],
+    consecutiveProfitableEvents: saved.consecutiveProfitableEvents || 0,
+    currentWinStreak: saved.currentWinStreak || 0,
   }
 }
 
@@ -142,7 +151,8 @@ export default function App() {
 
   function handleRecruit(recruit) {
     setState(prev => {
-      const newBudget = prev.promotion.budget - 15000
+      const recruitmentCost = recruit.recruitmentCost || 15000
+      const newBudget = prev.promotion.budget - recruitmentCost
       const newState = {
         ...prev,
         promotion: { ...prev.promotion, budget: newBudget },
@@ -369,6 +379,8 @@ export default function App() {
     if (tab === 'roster') setScreen('roster')
     else if (tab === 'matchmaking') setScreen('matchmaking')
     else if (tab === 'results') setScreen('results')
+    else if (tab === 'achievements') setScreen('achievements')
+    else if (tab === 'statistics') setScreen('statistics')
     else if (tab === 'history') setScreen('history')
   }
 
@@ -424,6 +436,15 @@ export default function App() {
               onAcknowledgeEvent={handleAcknowledgeEvent}
               onNewEvent={handleNewEvent}
             />
+          )}
+          {screen === 'achievements' && (
+            <AchievementsPanel
+              state={state}
+              earnedAchievements={state.earnedAchievements}
+            />
+          )}
+          {screen === 'statistics' && (
+            <Statistics state={state} />
           )}
           {screen === 'history' && (
             <History eventLog={state.eventLog || []} />
