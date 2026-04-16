@@ -1,16 +1,45 @@
-# React + Vite
+# MMA Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + Vite project for the MMA Game application.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+To get started with development:
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The development server will start at `http://localhost:5173`.
 
-## Expanding the ESLint configuration
+## Building
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+To build the project for production:
+
+```bash
+npm run build
+```
+
+The built files will be in the `dist` folder.
+
+## GitHub Pages Deployment
+
+This project is automatically deployed to GitHub Pages on every push to the `main` branch using GitHub Actions.
+
+- **Live URL**: https://giovannihilaire01-cyber.github.io/MMA/
+- **Configuration**: The project is configured to be deployed at `/MMA/` path (see `vite.config.js`)
+- **Workflow**: The deployment is handled by `.github/workflows/deploy.yml`
+
+The deployment process:
+1. Builds the project using `npm run build`
+2. Uploads the built artifacts to GitHub Pages
+3. The site is available at the URL above
+
+## ESLint
+
+To check code quality:
+
+```bash
+npm run lint
+```
