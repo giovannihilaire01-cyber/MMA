@@ -3,7 +3,6 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - claude/mma-promotion-gdd-P8AxI
       - main
   workflow_dispatch:
 
