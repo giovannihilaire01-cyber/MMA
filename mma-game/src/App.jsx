@@ -19,6 +19,7 @@ import GameOver from './screens/GameOver'
 import History from './screens/History'
 import AchievementsPanel from './screens/AchievementsPanel'
 import Statistics from './screens/Statistics'
+import Cosmetics from './screens/Cosmetics'
 
 // Phase-based economic parameters
 function getEconomicParams(totalEvents) {
@@ -380,6 +381,7 @@ export default function App() {
     else if (tab === 'matchmaking') setScreen('matchmaking')
     else if (tab === 'results') setScreen('results')
     else if (tab === 'achievements') setScreen('achievements')
+    else if (tab === 'cosmetics') setScreen('cosmetics')
     else if (tab === 'statistics') setScreen('statistics')
     else if (tab === 'history') setScreen('history')
   }
@@ -442,6 +444,9 @@ export default function App() {
               state={state}
               earnedAchievements={state.earnedAchievements}
             />
+          )}
+          {screen === 'cosmetics' && (
+            <Cosmetics state={state} />
           )}
           {screen === 'statistics' && (
             <Statistics state={state} />

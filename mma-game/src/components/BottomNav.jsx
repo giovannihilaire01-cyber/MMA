@@ -3,6 +3,7 @@ const TABS = [
   { id: 'matchmaking', label: 'Événement', icon: '🥊' },
   { id: 'results', label: 'Résultats', icon: '📋' },
   { id: 'achievements', label: 'Achievements', icon: '🏆' },
+  { id: 'cosmetics', label: 'Cosmétiques', icon: '✨' },
   { id: 'statistics', label: 'Stats', icon: '📊' },
   { id: 'history', label: 'Historique', icon: '📜' },
 ]
