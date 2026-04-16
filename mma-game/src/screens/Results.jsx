@@ -144,6 +144,7 @@ export default function Results({
   contextualEvent, onAcknowledgeEvent,
 }) {
   const hasContextualEvent = !!contextualEvent
+  const milestone = financials.milestone
 
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 112px)' }}>
@@ -151,6 +152,29 @@ export default function Results({
         <h2 className="font-bold uppercase tracking-wider text-primary text-sm">
           Résultats · {results.length} combat{results.length > 1 ? 's' : ''}
         </h2>
+
+        {/* Milestone notification */}
+        {milestone && (
+          <div
+            className="rounded-lg p-4 text-center flex flex-col gap-2 animate-pulse"
+            style={{
+              background: 'rgba(232,255,0,0.15)',
+              border: '2px solid #E8FF00',
+              animation: 'pulse 2s infinite',
+            }}
+          >
+            <span style={{ fontSize: 24 }}>🎉</span>
+            <span className="font-bold uppercase tracking-wider text-primary">
+              Milestone déverrouillé !
+            </span>
+            <span style={{ color: '#E8FF00', fontSize: 14 }} className="font-mono">
+              {milestone.milestone}
+            </span>
+            <span className="text-secondary text-sm">
+              Récompense: {milestone.reward}
+            </span>
+          </div>
+        )}
 
         {results.map((r, i) => (
           <FightResultCard

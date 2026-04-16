@@ -14,6 +14,27 @@ function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val))
 }
 
+// Calculate fighter level based on average stats
+export function calculateFighterLevel(fighter) {
+  const avgStat = (fighter.frappe + fighter.lutte + fighter.sol) / 3
+
+  const levels = [
+    { level: 5, title: 'Champion', stars: '🏆', minAvg: 85 },
+    { level: 4, title: 'Elite', stars: '⭐⭐⭐⭐⭐', minAvg: 70 },
+    { level: 3, title: 'Professional', stars: '⭐⭐⭐⭐', minAvg: 55 },
+    { level: 2, title: 'Prospect', stars: '⭐⭐⭐', minAvg: 40 },
+    { level: 1, title: 'Amateur', stars: '⭐⭐', minAvg: 25 },
+    { level: 0, title: 'Novice', stars: '⭐', minAvg: 0 },
+  ]
+
+  for (const lvl of levels) {
+    if (avgStat >= lvl.minAvg) {
+      return { ...lvl, avgStat }
+    }
+  }
+  return { level: 0, title: 'Novice', stars: '⭐', avgStat }
+}
+
 function applyProgression(fighter, won) {
   const f = { ...fighter }
   if (won) {

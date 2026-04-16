@@ -3,11 +3,18 @@ import { useState } from 'react'
 export default function Onboarding({ onStart }) {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [tutorialChoice, setTutorialChoice] = useState(null) // null = not chosen, true = with tutorial, false = skip
 
   function handleSubmit(e) {
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) return
+
+    if (tutorialChoice === null) {
+      // User hasn't chosen tutorial preference yet
+      return
+    }
+
     setLoading(true)
     setTimeout(() => onStart(trimmed), 100)
   }
@@ -64,18 +71,56 @@ export default function Onboarding({ onStart }) {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={!name.trim() || loading}
-            className="w-full py-4 rounded-lg font-bold uppercase tracking-wider text-sm transition-opacity"
-            style={{
-              background: name.trim() && !loading ? '#E8FF00' : '#2A2A2A',
-              color: name.trim() && !loading ? '#000' : '#555',
-              cursor: name.trim() && !loading ? 'pointer' : 'default',
-            }}
-          >
-            {loading ? 'GÉNÉRATION...' : 'LANCER LA CARRIÈRE'}
-          </button>
+          {/* Tutorial Choice */}
+          {tutorialChoice === null && (
+            <div className="flex flex-col gap-2">
+              <p className="text-secondary text-xs">
+                Voulez-vous un tutoriel rapide ?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTutorialChoice(true)}
+                  className="flex-1 py-2 rounded-lg font-bold uppercase tracking-wider text-xs transition-all"
+                  style={{
+                    background: '#E8FF00',
+                    color: '#000',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Oui, tutoriel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTutorialChoice(false)}
+                  className="flex-1 py-2 rounded-lg font-bold uppercase tracking-wider text-xs transition-all"
+                  style={{
+                    background: '#2A2A2A',
+                    color: '#888',
+                    cursor: 'pointer',
+                    border: '1px solid #2A2A2A',
+                  }}
+                >
+                  Passer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tutorialChoice !== null && (
+            <button
+              type="submit"
+              disabled={!name.trim() || loading}
+              className="w-full py-4 rounded-lg font-bold uppercase tracking-wider text-sm transition-opacity"
+              style={{
+                background: name.trim() && !loading ? '#E8FF00' : '#2A2A2A',
+                color: name.trim() && !loading ? '#000' : '#555',
+                cursor: name.trim() && !loading ? 'pointer' : 'default',
+              }}
+            >
+              {loading ? 'GÉNÉRATION...' : 'LANCER LA CARRIÈRE'}
+            </button>
+          )}
         </form>
 
         <p className="text-secondary" style={{ fontSize: 10 }}>

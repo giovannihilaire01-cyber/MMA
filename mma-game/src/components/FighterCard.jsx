@@ -1,3 +1,4 @@
+import { calculateFighterLevel } from '../utils/simulateFight'
 import EffectIcon from './EffectIcon'
 
 function EffectRow({ effects }) {
@@ -33,6 +34,9 @@ export default function FighterCard({ fighter, inEvent = false, compact = false,
   const suspended = effects.some(e => e.type === 'suspension')
   const disabledStyle = suspended ? { opacity: 0.4, borderColor: '#444' } : {}
 
+  // Calculate fighter level
+  const levelInfo = calculateFighterLevel(fighter)
+
   if (compact) {
     return (
       <div
@@ -48,15 +52,18 @@ export default function FighterCard({ fighter, inEvent = false, compact = false,
         <span className="font-bold uppercase tracking-wide text-primary leading-tight" style={{ fontSize: 11 }}>
           {nom}
         </span>
-        <div className="flex gap-1.5 font-mono" style={{ fontSize: 10 }}>
-          <span style={{ color: '#E8FF00' }}>{frappe}</span>
-          <span className="text-secondary">/</span>
-          <span style={{ color: '#60A5FA' }}>{lutte}</span>
-          <span className="text-secondary">/</span>
-          <span style={{ color: '#FB923C' }}>{sol}</span>
+        <div className="flex gap-1 items-center justify-between">
+          <div className="flex gap-1.5 font-mono" style={{ fontSize: 9 }}>
+            <span style={{ color: '#E8FF00' }}>{frappe}</span>
+            <span className="text-secondary">/</span>
+            <span style={{ color: '#60A5FA' }}>{lutte}</span>
+            <span className="text-secondary">/</span>
+            <span style={{ color: '#FB923C' }}>{sol}</span>
+          </div>
+          <span style={{ fontSize: 11 }}>{levelInfo.stars}</span>
         </div>
         <EffectRow effects={effects} />
-        <span className="text-secondary" style={{ fontSize: 10 }}>
+        <span className="text-secondary font-mono" style={{ fontSize: 9 }}>
           {bilan.v}V · {bilan.d}D
         </span>
       </div>
@@ -74,9 +81,14 @@ export default function FighterCard({ fighter, inEvent = false, compact = false,
       }}
     >
       <div className="flex items-start justify-between gap-1">
-        <span className="font-bold uppercase tracking-wide text-primary leading-tight text-sm">
-          {nom}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-bold uppercase tracking-wide text-primary leading-tight text-sm">
+            {nom}
+          </span>
+          <span style={{ fontSize: 10, color: '#888' }}>
+            {levelInfo.stars} {levelInfo.title}
+          </span>
+        </div>
         {inEvent && (
           <span
             className="rounded px-1 font-bold uppercase shrink-0"

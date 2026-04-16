@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import FighterCard from '../components/FighterCard'
+import GoalTracker from '../components/GoalTracker'
 import { generateRecruits } from '../utils/generateFighters'
 
 const SORT_OPTIONS = [
@@ -149,7 +150,7 @@ function RecruitModal({ recruits, onSelect, onClose, budget }) {
   )
 }
 
-export default function Roster({ fighters, currentEvent, budget, activeEffects = [], onRecruit, onGoMatchmaking }) {
+export default function Roster({ fighters, currentEvent, budget, activeEffects = [], totalEvents = 0, onRecruit, onGoMatchmaking }) {
   const effectsByFighter = activeEffects.reduce((acc, e) => {
     if (e.fighterId) (acc[e.fighterId] = acc[e.fighterId] || []).push(e)
     return acc
@@ -200,6 +201,17 @@ export default function Roster({ fighters, currentEvent, budget, activeEffects =
             {o.label}
           </button>
         ))}
+      </div>
+
+      {/* Goal Tracker */}
+      <div className="px-4 py-2">
+        <GoalTracker
+          state={{
+            promotion: { budget },
+            totalEvents,
+            fighters,
+          }}
+        />
       </div>
 
       {/* Event CTA if event in progress */}

@@ -18,9 +18,59 @@ import Results from './screens/Results'
 import GameOver from './screens/GameOver'
 import History from './screens/History'
 
-const REVENUE_PER_FIGHT = 8000
-const COST_PER_FIGHT = 3000
-const FIXED_COST = 5000
+// Phase-based economic parameters
+function getEconomicParams(totalEvents) {
+  // Determine current phase based on events
+  let phase = 'startup'
+  if (totalEvents >= 6) phase = 'growth'
+  if (totalEvents >= 21) phase = 'stability'
+  if (totalEvents >= 41) phase = 'dominance'
+
+  const params = {
+    startup: { revenue: 9000, cost: 2000, fixed: 3000 }, // 1 fight = +4000
+    growth: { revenue: 8500, cost: 2500, fixed: 3500 },  // 3 fights = +14500
+    stability: { revenue: 8000, cost: 3000, fixed: 4000 }, // Standard
+    dominance: { revenue: 8000, cost: 3000, fixed: 4000 }, // Standard with high variance
+  }
+  return params[phase]
+}
+
+// Get variance multiplier based on phase
+function getVarianceRange(totalEvents) {
+  let phase = 'startup'
+  if (totalEvents >= 6) phase = 'growth'
+  if (totalEvents >= 21) phase = 'stability'
+  if (totalEvents >= 41) phase = 'dominance'
+
+  const variances = {
+    startup: { min: 0.9, max: 1.1 },      // 90-110% (safe)
+    growth: { min: 0.85, max: 1.15 },     // 85-115% (introduces drama)
+    stability: { min: 0.8, max: 1.2 },    // 80-120%
+    dominance: { min: 0.7, max: 1.3 },    // 70-130% (high drama/risk)
+  }
+  return variances[phase]
+}
+
+// Detect milestone reached
+function detectMilestone(budget, totalEvents, totalWins) {
+  const financialMilestones = [250000, 500000, 1000000]
+  const eventMilestones = [5, 15, 30, 50]
+
+  if (financialMilestones.includes(budget)) {
+    if (budget === 250000) return { type: 'financial', milestone: '$250k', reward: 'Great Manager' }
+    if (budget === 500000) return { type: 'financial', milestone: '$500k', reward: 'Regional Champion' }
+    if (budget === 1000000) return { type: 'financial', milestone: '$1M', reward: 'Living Legend' }
+  }
+
+  if (eventMilestones.includes(totalEvents)) {
+    if (totalEvents === 5) return { type: 'event', milestone: '5 événements', reward: 'Entrepreneur' }
+    if (totalEvents === 15) return { type: 'event', milestone: '15 événements', reward: 'Great Manager' }
+    if (totalEvents === 30) return { type: 'event', milestone: '30 événements', reward: 'Regional' }
+    if (totalEvents === 50) return { type: 'event', milestone: '50 événements', reward: 'National' }
+  }
+
+  return null
+}
 
 function initState() {
   return {
@@ -118,9 +168,17 @@ export default function App() {
 
     const { results, updatedRoster } = simulateEvent(completed, state.fighters)
 
+    // Get economic parameters based on current phase
+    const economicParams = getEconomicParams(state.totalEvents)
+    const varianceRange = getVarianceRange(state.totalEvents)
+
+    // Calculate variance multiplier (between min and max)
+    const variance = varianceRange.min + (Math.random() * (varianceRange.max - varianceRange.min))
+
     const n = completed.length
-    const revenue = n * REVENUE_PER_FIGHT
-    const costs = n * COST_PER_FIGHT + FIXED_COST
+    const baseRevenue = n * economicParams.revenue
+    const revenue = Math.floor(baseRevenue * variance)
+    const costs = n * economicParams.cost + economicParams.fixed
     const net = revenue - costs
     const budgetAfterFight = state.promotion.budget + net
     const newTotalEvents = state.totalEvents + 1
@@ -163,13 +221,17 @@ export default function App() {
       ? { event: picked.event, value: picked.value, targetId: picked.target?.id || null, interpolated: picked.interpolated }
       : null
 
+    // Detect milestone
+    const totalWins = ticked.fighters.reduce((sum, f) => sum + (f.bilan?.v || 0), 0)
+    const milestone = detectMilestone(ticked.budget, newTotalEvents, totalWins)
+
     const newState = {
       ...state,
       promotion: { ...state.promotion, budget: ticked.budget },
       fighters: ticked.fighters,
       activeEffects: ticked.activeEffects,
       currentEvent: [],
-      lastResults: { results, financials: { revenue, costs, net, newBudget: ticked.budget, n } },
+      lastResults: { results, financials: { revenue, costs, net, newBudget: ticked.budget, n }, milestone },
       totalEvents: newTotalEvents,
       totalFights: newTotalFights,
       nbEvenementsJoues,
@@ -338,6 +400,7 @@ export default function App() {
               fighters={state.fighters}
               currentEvent={state.currentEvent}
               budget={state.promotion.budget}
+              totalEvents={state.totalEvents}
               activeEffects={state.activeEffects}
               onRecruit={handleRecruit}
               onGoMatchmaking={() => { setScreen('matchmaking'); setActiveTab('matchmaking') }}
